@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="icon" href="icon.jpg">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Text to QR Splitter</title>
+<title>Text → QR Splitter</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -91,6 +90,48 @@
     text-transform: uppercase;
     color: var(--text-faint);
     margin-bottom: 0.75rem;
+  }
+
+  .card-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+  }
+
+  .card-label-row .card-label { margin-bottom: 0; }
+
+  .btn-paste {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-light);
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .btn-paste:hover { background: var(--accent); color: #fff; }
+  .btn-paste:active { transform: scale(0.97); }
+  .btn-paste.pasted { background: #1f9d55; color: #fff; }
+
+  .paste-hint {
+    display: none;
+    font-size: 11px;
+    color: var(--text-faint);
+    text-align: right;
+    margin-top: -0.35rem;
+    margin-bottom: 0.6rem;
+  }
+
+  @media (pointer: coarse) {
+    .paste-hint { display: block; }
   }
 
   textarea {
@@ -295,13 +336,20 @@
 <div class="page">
 
   <header>
-    <h1>Text to QR codes</h1>
-    <p class="subtitle">Automatically cuts long texts into QR codes, will not cut your paragraphs mid-way.</p>
-    <p class="subtitle">Ensure your paragraphing is accurate for best results.</p>
+    <div class="wordmark">QR Splitter</div>
+    <h1>Text <span>&#8594;</span> QR codes</h1>
+    <p class="subtitle">Paste long text and split it into scannable QR codes &mdash; paragraphs are never cut in the middle.</p>
   </header>
 
   <div class="card">
-    <div class="card-label">Your text</div>
+    <div class="card-label-row">
+      <div class="card-label">Your text</div>
+      <button type="button" class="btn-paste" id="pasteBtn" onclick="pasteFromClipboard()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+        <span id="pasteBtnLabel">Paste</span>
+      </button>
+    </div>
+    <div class="paste-hint">Or long-press the text box below and tap Paste</div>
     <textarea id="inputText" placeholder="Paste or type your text here..." spellcheck="false"></textarea>
     <div class="controls">
       <div class="field">
@@ -313,6 +361,7 @@
         Generate QR codes
       </button>
 
+      <p class="hint">Tip: Ctrl + Enter to generate</p>
     </div>
   </div>
 
@@ -882,6 +931,43 @@ function generate() {
 document.getElementById('inputText').addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && e.ctrlKey) generate();
 });
+
+// ─── Paste from clipboard ─────────────────────────────────────────────────
+function pasteFromClipboard() {
+  var textarea = document.getElementById('inputText');
+  var btn = document.getElementById('pasteBtn');
+  var label = document.getElementById('pasteBtnLabel');
+
+  function showPasted() {
+    btn.classList.add('pasted');
+    var prevLabel = label.textContent;
+    label.textContent = 'Pasted!';
+    setTimeout(function() {
+      btn.classList.remove('pasted');
+      label.textContent = prevLabel;
+    }, 1200);
+  }
+
+  if (navigator.clipboard && navigator.clipboard.readText) {
+    navigator.clipboard.readText().then(function(text) {
+      if (text) {
+        textarea.value = text;
+        textarea.focus();
+        showPasted();
+      }
+    }).catch(function() {
+      // Permission denied or unavailable — fall back to focusing the textarea
+      // so the user can paste manually with Ctrl/Cmd+V.
+      textarea.focus();
+      label.textContent = 'Press ⌘/Ctrl+V';
+      setTimeout(function() { label.textContent = 'Paste'; }, 1800);
+    });
+  } else {
+    textarea.focus();
+    label.textContent = 'Press ⌘/Ctrl+V';
+    setTimeout(function() { label.textContent = 'Paste'; }, 1800);
+  }
+}
 </script>
 </body>
 </html>
